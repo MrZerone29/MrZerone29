@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://komarev.com/ghpvc/?username=thanh-26009&color=blueviolet&style=for-the-badge">
+  <img src="https://komarev.com/ghpvc/?username=MrZerone29&color=blueviolet&style=for-the-badge">
 </p>
 
 ---
@@ -48,9 +48,9 @@
 
 <p align="center">
   <img src="">
-  <img src="https://github-readme-stats.vercel.app/api?username=thanh-26009&show_icons=true&theme=tokyonight&hide_border=true">
+  <img src="https://github-readme-stats.vercel.app/api?username=MrZerone29&show_icons=true&theme=tokyonight&hide_border=true">
   <br>
-  <img src="https://github-readme-streak-stats.herokuapp.com/?user=thanh-26009&theme=tokyonight&hide_border=true">
+  <img src="https://github-readme-streak-stats.herokuapp.com/?user=MrZerone29&theme=tokyonight&hide_border=true">
 </p>
 
 ---
@@ -58,7 +58,7 @@
 ## 📈 Activity Graph
 
 <p align="center">
-  <img src="https://github-readme-activity-graph.vercel.app/graph?username=thanh-26009&theme=tokyo-night&hide_border=true">
+  <img src="https://github-readme-activity-graph.vercel.app/graph?username=MrZerone29&theme=tokyo-night&hide_border=true">
 </p>
 
 ---

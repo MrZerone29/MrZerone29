@@ -1,0 +1,241 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'sans-serif UI', sans-serif;
+    background: linear-gradient(-45deg, #667eea, #764ba2, #6b73ff, #b05fff);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 40px 20px;
+    color: #f8f9fa;
+}
+
+/* Hiệu ứng chuyển động nền */
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Thẻ chứa nội dung */
+.container {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: fadeIn 1s ease;
+}
+
+/* Hiệu ứng xuất hiện */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ảnh avatar */
+.avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 20px;
+    border: 4px solid #fff;
+}
+
+/* Tên */
+h1 {
+    font-size: 28px;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+/* Mô tả */
+.description {
+    font-size: 16px;
+    color: #e0e0e0;
+    margin-bottom: 25px;
+}
+
+/* Các liên kết */
+.links a {
+    display: block;
+    margin: 12px 0;
+    padding: 12px 18px;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.links a:hover {
+    background: #ffffff;
+    color: #4f46e5;
+    transform: scale(1.05);
+}
+
+.icon {
+    margin-right: 8px;
+}
+/* Responsive cho thiết bị nhỏ hơn 768px */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+        max-width: 90%;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    .description {
+        font-size: 14px;
+    }
+
+    .avatar {
+        width: 120px;
+        height: 120px;
+    }
+
+    .links a {
+        padding: 10px 14px;
+        font-size: 15px;
+    }
+}
+
+/* Responsive cho thiết bị cực nhỏ (điện thoại nhỏ dưới 400px) */
+@media (max-width: 400px) {
+    h1 {
+        font-size: 20px;
+    }
+
+    .avatar {
+        width: 100px;
+        height: 100px;
+    }
+
+    .links a {
+        font-size: 14px;
+    }
+}
+/* Hiệu ứng hover cho avatar */
+.avatar {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.avatar:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.7);
+}
+
+/* Hiệu ứng hover cho tên */
+h1 {
+    transition: color 0.3s ease, transform 0.3s ease;
+    cursor: default;
+}
+h1:hover {
+    color: #b05fff;
+    transform: scale(1.05);
+}
+
+/* Hiệu ứng hover cho mô tả */
+.description {
+    transition: color 0.3s ease;
+}
+.description:hover {
+    color: #c4a7e7;
+}
+
+/* Cải tiến hover cho các link */
+.links a {
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.links a:hover {
+    background: #ffffff;
+    color: #4f46e5;
+    transform: scale(1.07);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.6);
+}
+/* --- Hiệu ứng hover mở rộng --- */
+
+/* Avatar */
+.avatar {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+.avatar:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.7);
+}
+.avatar:active {
+    transform: scale(0.95); /* Nhấn nhỏ lại khi click */
+    box-shadow: 0 0 15px rgba(66, 103, 178, 0.9);
+}
+
+/* Tên (h1) */
+h1 {
+    transition: color 0.3s ease, transform 0.3s ease;
+    cursor: default;
+}
+h1:hover {
+    color: #b05fff;
+    transform: scale(1.05);
+}
+
+/* Mô tả */
+.description {
+    transition: color 0.3s ease;
+}
+.description:hover {
+    color: #c4a7e7;
+}
+
+/* Các link */
+.links a {
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    user-select: none;
+}
+.links a:hover {
+    background: #ffffff;
+    color: #4f46e5;
+    transform: scale(1.07);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.6);
+}
+.links a:active {
+    transform: scale(0.95);
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.8);
+}
+
+/* Optional: hiệu ứng nhấn trên container chính */
+.container {
+    transition: transform 0.2s ease;
+}
+.container:active {
+    transform: scale(0.98);
+}
+
+.social-icon {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    margin-right: 10px;
+    border-radius: 4px;
+    object-fit: cover;
+}

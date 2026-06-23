@@ -20,7 +20,7 @@
 
 ## 🧑‍💻 Giới thiệu
 
-- 🕶️ Developer bí ẩn trong thế giới số  
+- 🕶️ Developer newbie đang tập code
 - ⚡ Đam mê lập trình & automation  
 - 🌱 Đang học: Backend & System Design  
 - 🎯 Mục tiêu: Trở thành Software Engineer hàng đầu  

@@ -1,241 +1,360 @@
-/* Reset */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* =========================================================
+   info.css — giao diện trang profile Mr Zerone
+   Chủ đề: nhị phân (zero + one). Nền xanh ultramarine, chữ trắng,
+   điểm nhấn vàng. Đổi màu ở khối :root bên dưới.
+   ========================================================= */
+
+:root {
+  --bg: #2326E0;
+  --bg-pill: rgba(20, 22, 170, .72);
+  --ink: #FFFFFF;
+  --ink-dim: rgba(255, 255, 255, .74);
+  --edge: rgba(255, 255, 255, .38);
+  --accent: #FFD84D;
+  --accent-ink: #13167F;
+
+  --display: "Unbounded", "Be Vietnam Pro", system-ui, sans-serif;
+  --body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --row: 4rem;
+
+  color-scheme: dark;
 }
+
+/* ---------- Nền tảng ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { background: var(--bg); -webkit-text-size-adjust: 100%; }
 
 body {
-    font-family: 'sans-serif UI', sans-serif;
-    background: linear-gradient(-45deg, #667eea, #764ba2, #6b73ff, #b05fff);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-    padding: 40px 20px;
-    color: #f8f9fa;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Hiệu ứng chuyển động nền */
-@keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+h1, p, ul { margin: 0; }
+
+::selection { background: var(--accent); color: var(--accent-ink); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
-/* Thẻ chứa nội dung */
-.container {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    animation: fadeIn 1s ease;
+.sr {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-/* Hiệu ứng xuất hiện */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+/* ---------- Nền chữ số 0 / 1 (vẽ bằng canvas) ---------- */
+#field {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
 }
 
-/* Ảnh avatar */
+/* ---------- Bố cục ---------- */
+.stage {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, calc(100% - 2.5rem));
+  min-height: 100svh;
+  margin-inline: auto;
+  padding-block: clamp(2.5rem, 8vw, 5rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+  align-items: center;
+  gap: clamp(2.5rem, 6vw, 6rem);
+}
+
+@media (max-width: 860px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+  }
+}
+
+/* ---------- Ảnh đại diện + vòng số ---------- */
 .avatar {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-bottom: 20px;
-    border: 4px solid #fff;
+  position: relative;
+  width: clamp(116px, 18vw, 152px);
+  aspect-ratio: 1;
+  margin-bottom: clamp(1.75rem, 4vw, 2.5rem);
+  animation: pop .9s var(--ease) both;
 }
 
-/* Tên */
-h1 {
-    font-size: 28px;
-    color: #ffffff;
-    margin-bottom: 10px;
+@keyframes pop {
+  from { opacity: 0; transform: scale(.8) rotate(-8deg); }
+  to   { opacity: 1; transform: none; }
 }
 
-/* Mô tả */
-.description {
-    font-size: 16px;
-    color: #e0e0e0;
-    margin-bottom: 25px;
+.avatar__ring {
+  position: absolute;
+  inset: -14%;
+  width: 128%;
+  height: 128%;
+  animation: spin 48s linear infinite;
 }
 
-/* Các liên kết */
-.links a {
-    display: block;
-    margin: 12px 0;
-    padding: 12px 18px;
-    text-decoration: none;
-    background: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.avatar__ring text {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 11px;
+  text-anchor: middle;
+  fill: #fff;
+  opacity: .55;
+  transition: opacity .4s, fill .4s;
 }
 
-.links a:hover {
-    background: #ffffff;
-    color: #4f46e5;
-    transform: scale(1.05);
+.avatar__ring text.hot {
+  fill: var(--accent);
+  opacity: 1;
 }
 
-.icon {
-    margin-right: 8px;
-}
-/* Responsive cho thiết bị nhỏ hơn 768px */
-@media (max-width: 768px) {
-    .container {
-        padding: 20px;
-        max-width: 90%;
-    }
-
-    h1 {
-        font-size: 24px;
-    }
-
-    .description {
-        font-size: 14px;
-    }
-
-    .avatar {
-        width: 120px;
-        height: 120px;
-    }
-
-    .links a {
-        padding: 10px 14px;
-        font-size: 15px;
-    }
+.avatar__img {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: rgba(255, 255, 255, .16);
 }
 
-/* Responsive cho thiết bị cực nhỏ (điện thoại nhỏ dưới 400px) */
-@media (max-width: 400px) {
-    h1 {
-        font-size: 20px;
-    }
-
-    .avatar {
-        width: 100px;
-        height: 100px;
-    }
-
-    .links a {
-        font-size: 14px;
-    }
-}
-/* Hiệu ứng hover cho avatar */
-.avatar {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.avatar:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.7);
+.avatar__fallback {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--bg);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 2.4rem;
+  letter-spacing: -.04em;
 }
 
-/* Hiệu ứng hover cho tên */
-h1 {
-    transition: color 0.3s ease, transform 0.3s ease;
-    cursor: default;
-}
-h1:hover {
-    color: #b05fff;
-    transform: scale(1.05);
+.avatar.no-img .avatar__img { display: none; }
+.avatar.no-img .avatar__fallback { display: grid; }
+
+/* ---------- Tên ---------- */
+.name {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2.8rem, 11vw, 6.5rem);
+  line-height: 1.04;
+  letter-spacing: -.02em;
 }
 
-/* Hiệu ứng hover cho mô tả */
-.description {
-    transition: color 0.3s ease;
-}
-.description:hover {
-    color: #c4a7e7;
+.name .word { display: block; }
+
+.name .ch {
+  display: inline-block;
+  text-align: center;
+  transition: color .9s ease;
 }
 
-/* Cải tiến hover cho các link */
-.links a {
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-.links a:hover {
-    background: #ffffff;
-    color: #4f46e5;
-    transform: scale(1.07);
-    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.6);
-}
-/* --- Hiệu ứng hover mở rộng --- */
+.name .ch.is-scr { color: var(--accent); }
 
-/* Avatar */
-.avatar {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
-}
-.avatar:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.7);
-}
-.avatar:active {
-    transform: scale(0.95); /* Nhấn nhỏ lại khi click */
-    box-shadow: 0 0 15px rgba(66, 103, 178, 0.9);
+/* Ẩn tên cho tới khi script chuẩn bị xong để không bị nháy */
+.js .name:not(.is-ready) { visibility: hidden; }
+
+/* ---------- Danh sách thông tin ---------- */
+.info {
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: .8rem;
 }
 
-/* Tên (h1) */
-h1 {
-    transition: color 0.3s ease, transform 0.3s ease;
-    cursor: default;
-}
-h1:hover {
-    color: #b05fff;
-    transform: scale(1.05);
+@media (max-width: 860px) {
+  .info { margin-inline: 0; max-width: none; }
 }
 
-/* Mô tả */
-.description {
-    transition: color 0.3s ease;
-}
-.description:hover {
-    color: #c4a7e7;
-}
-
-/* Các link */
-.links a {
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    cursor: pointer;
-    user-select: none;
-}
-.links a:hover {
-    background: #ffffff;
-    color: #4f46e5;
-    transform: scale(1.07);
-    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.6);
-}
-.links a:active {
-    transform: scale(0.95);
-    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.8);
+.item {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  opacity: 0;
+  transform: translateX(28px);
+  animation: slide .8s var(--ease) forwards;
+  animation-delay: calc(1.1s + var(--i, 0) * .09s);
 }
 
-/* Optional: hiệu ứng nhấn trên container chính */
-.container {
-    transition: transform 0.2s ease;
-}
-.container:active {
-    transform: scale(0.98);
+@keyframes slide { to { opacity: 1; transform: none; } }
+
+.item__link {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--row);
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: .5rem 1rem .5rem .6rem;
+  border: 1.5px solid var(--edge);
+  border-radius: 999px;
+  background: var(--bg-pill);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  color: var(--ink);
+  text-decoration: none;
+  transition: color .35s, border-color .35s;
 }
 
-.social-icon {
-    width: 20px;
-    height: 20px;
-    vertical-align: middle;
-    margin-right: 10px;
-    border-radius: 4px;
-    object-fit: cover;
+/* Vệt màu vàng loang ra từ chỗ con trỏ đi vào */
+.item__link::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--accent);
+  clip-path: circle(0 at var(--px, 50%) var(--py, 50%));
+  transition: clip-path .6s var(--ease);
+}
+
+.item__link:hover,
+.item__link:focus-visible {
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.item__link:hover::before,
+.item__link:focus-visible::before {
+  clip-path: circle(200% at var(--px, 50%) var(--py, 50%));
+}
+
+.item__ico {
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .5s var(--ease);
+}
+
+.item__ico img {
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+}
+
+.item__link:hover .item__ico,
+.item__link:focus-visible .item__ico {
+  transform: rotate(-12deg) scale(1.08);
+}
+
+.item__text {
+  min-width: 0;
+  display: grid;
+  line-height: 1.25;
+}
+
+.item__label {
+  font-size: .82rem;
+  color: var(--ink-dim);
+  transition: color .35s;
+}
+
+.item__value {
+  font-weight: 600;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.item__link:hover .item__label,
+.item__link:focus-visible .item__label {
+  color: var(--accent-ink);
+  opacity: .78;
+}
+
+.item__go {
+  flex: none;
+  margin-left: auto;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+}
+
+.item__go svg {
+  transform: rotate(-45deg);
+  transition: transform .5s var(--ease);
+}
+
+.item__link:hover .item__go svg,
+.item__link:focus-visible .item__go svg {
+  transform: none;
+}
+
+@media (max-width: 480px) {
+  .item__go { display: none; }
+  .item__value { font-size: 1rem; }
+}
+
+/* ---------- Nút sao chép ---------- */
+.item__copy {
+  flex: none;
+  width: var(--row);
+  height: var(--row);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--edge);
+  border-radius: 50%;
+  background: var(--bg-pill);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background .3s, color .3s, border-color .3s, transform .4s var(--ease);
+}
+
+.item__copy:hover {
+  background: var(--ink);
+  color: var(--bg);
+  transform: scale(1.06);
+}
+
+.item__copy .i-check { display: none; }
+.item__copy.is-done .i-copy { display: none; }
+.item__copy.is-done .i-check { display: block; }
+
+.item__copy.is-done {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+@media (max-width: 480px) {
+  :root { --row: 3.6rem; }
+}
+
+/* ---------- Giảm chuyển động ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
 }

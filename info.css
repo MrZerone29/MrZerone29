@@ -25,10 +25,15 @@
 /* ---------- Nền tảng ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 
-html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
 body {
   margin: 0;
+  min-height: 100vh;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -38,6 +43,7 @@ body {
   font-size: 1rem;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, p, ul { margin: 0; }
@@ -57,75 +63,34 @@ h1, p, ul { margin: 0; }
   white-space: nowrap;
 }
 
-@keyframes fade { to { opacity: 1; } }
-
 /* ---------- Các lớp nền (dưới → trên) ----------
    0  lưới chữ số 0/1 + vignette
    1  tuyết phía sau
    2  nội dung
    3  tuyết phía trước (bokeh mờ)
-   4  nút bật/tắt tuyết                               */
-#field {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
-}
-
+   Mọi lớp cố định đều phủ đúng bằng khung nhìn:
+   không dư, không thiếu.                             */
+#field,
+#snow-back,
+#snow-front,
 .vignette {
   position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: radial-gradient(120% 90% at 50% 38%, transparent 52%, rgba(6, 8, 96, .52) 100%);
-}
-
-#snow-back,
-#snow-front {
-  position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
 }
 
+#field      { z-index: 0; }
+.vignette   {
+  z-index: 0;
+  background: radial-gradient(120% 90% at 50% 38%, transparent 52%, rgba(6, 8, 96, .52) 100%);
+}
 #snow-back  { z-index: 1; }
 #snow-front { z-index: 3; }
-
-/* ---------- Nút bật / tắt tuyết ---------- */
-.snow-toggle {
-  position: fixed;
-  z-index: 4;
-  top: calc(env(safe-area-inset-top, 0px) + 1rem);
-  right: max(1rem, env(safe-area-inset-right, 0px));
-  width: 2.75rem;
-  height: 2.75rem;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  border: 1.5px solid var(--edge);
-  border-radius: 50%;
-  background: var(--bg-pill);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  color: var(--ink);
-  cursor: pointer;
-  opacity: 0;
-  animation: fade 1s 2.2s var(--ease) forwards;
-  transition: background .3s, color .3s, transform .6s var(--ease);
-}
-
-.snow-toggle:hover {
-  background: var(--ink);
-  color: var(--bg);
-  transform: rotate(60deg);
-}
-
-.snow-toggle .i-off { display: none; }
-.snow-toggle[aria-pressed="false"] .i-off { display: block; }
-.snow-toggle[aria-pressed="false"] { opacity: .75; }
 
 /* ---------- Bố cục ---------- */
 .stage {
@@ -150,9 +115,10 @@ h1, p, ul { margin: 0; }
 
 /* ---------- Ảnh đại diện + vòng số ---------- */
 .avatar {
+  --av: clamp(116px, 18vw, 152px);
   position: relative;
-  width: clamp(116px, 18vw, 152px);
-  aspect-ratio: 1;
+  width: var(--av);
+  height: var(--av);
   margin-bottom: clamp(1.75rem, 4vw, 2.5rem);
   perspective: 700px;
   animation: pop .9s var(--ease) both;
@@ -167,7 +133,10 @@ h1, p, ul { margin: 0; }
 .avatar::before {
   content: "";
   position: absolute;
-  inset: -3%;
+  top: -3%;
+  right: -3%;
+  bottom: -3%;
+  left: -3%;
   border-radius: 50%;
   box-shadow: 0 0 36px 8px rgba(170, 180, 255, .5);
   animation: breathe 4.5s ease-in-out infinite;
@@ -188,7 +157,8 @@ h1, p, ul { margin: 0; }
 
 .avatar__ring {
   position: absolute;
-  inset: -14%;
+  top: -14%;
+  left: -14%;
   width: 128%;
   height: 128%;
   animation: spin 48s linear infinite;
@@ -223,20 +193,27 @@ h1, p, ul { margin: 0; }
 
 .avatar__fallback {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: none;
-  place-items: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   background: #fff;
   color: var(--bg);
   font-family: var(--display);
   font-weight: 800;
-  font-size: 2.4rem;
-  letter-spacing: -.04em;
+  font-size: calc(var(--av) * .17); /* co theo kích thước ảnh đại diện */
+  line-height: 1.12;
+  letter-spacing: -.02em;
+  text-align: center;
 }
 
 .avatar.no-img .avatar__img { display: none; }
-.avatar.no-img .avatar__fallback { display: grid; }
+.avatar.no-img .avatar__fallback { display: flex; }
 
 /* ---------- Tên ---------- */
 .name {
@@ -313,7 +290,7 @@ h1, p, ul { margin: 0; }
   transform-origin: 50% 100%;
   animation: capIn .9s var(--ease) both;
   animation-delay: calc(1.9s + var(--i, 0) * .12s);
-  transition: scale .55s var(--ease), opacity .55s;
+  transition: transform .55s var(--ease), opacity .55s;
 }
 
 .item::before {
@@ -329,8 +306,8 @@ h1, p, ul { margin: 0; }
 }
 
 @keyframes capIn {
-  from { transform: scale(0); }
-  to   { transform: none; }
+  from { scale: 0; }
+  to   { scale: 1; }
 }
 
 .item:nth-child(1) { --cx: 4%; }
@@ -339,16 +316,12 @@ h1, p, ul { margin: 0; }
 .item:nth-child(4) { --cx: 36%; }
 .item:nth-child(5) { --cx: 20%; }
 
-.item:has(.item__link:hover)::before,
-.item:has(.item__link:hover)::after,
-.item:has(.item__link:focus-visible)::before,
-.item:has(.item__link:focus-visible)::after {
-  scale: 1 0;
+/* .is-melt do script thêm vào khi rê chuột / focus */
+.item.is-melt::before,
+.item.is-melt::after {
+  transform: scaleY(0);
   opacity: 0;
 }
-
-.snow-off .item::before,
-.snow-off .item::after { display: none; }
 
 .item__link {
   position: relative;
@@ -375,11 +348,15 @@ h1, p, ul { margin: 0; }
 .item__link::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: -1;
   background: var(--accent);
+  -webkit-clip-path: circle(0 at var(--px, 50%) var(--py, 50%));
   clip-path: circle(0 at var(--px, 50%) var(--py, 50%));
-  transition: clip-path .6s var(--ease);
+  transition: clip-path .6s var(--ease), -webkit-clip-path .6s var(--ease);
 }
 
 .item__link:hover,
@@ -390,6 +367,7 @@ h1, p, ul { margin: 0; }
 
 .item__link:hover::before,
 .item__link:focus-visible::before {
+  -webkit-clip-path: circle(200% at var(--px, 50%) var(--py, 50%));
   clip-path: circle(200% at var(--px, 50%) var(--py, 50%));
 }
 
@@ -477,6 +455,7 @@ h1, p, ul { margin: 0; }
   background: var(--bg-pill);
   color: var(--ink);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   transition: background .3s, color .3s, border-color .3s, transform .4s var(--ease);
 }
 
@@ -500,19 +479,8 @@ h1, p, ul { margin: 0; }
   :root { --row: 3.6rem; }
 }
 
-/* ---------- Dòng cuối trang ---------- */
-.credit {
-  position: relative;
-  z-index: 2;
-  padding: 1rem 1rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
-  text-align: center;
-  font-size: .85rem;
-  color: var(--ink-dim);
-  opacity: 0;
-  animation: fade 1s 2.6s var(--ease) forwards;
-}
-
-/* ---------- Giảm chuyển động ---------- */
+/* ---------- Giảm chuyển động (cài đặt của hệ điều hành) ----------
+   Tuyết vẫn rơi nhưng thưa và chậm hơn (xử lý trong script). */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .001ms !important;
@@ -520,5 +488,4 @@ h1, p, ul { margin: 0; }
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
   }
-  .snow-toggle { display: none; }
 }

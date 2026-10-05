@@ -20,13 +20,6 @@
 <div class="vignette" aria-hidden="true"></div>
 <canvas id="snow-back" aria-hidden="true"></canvas>
 
-<button class="snow-toggle" id="snow-toggle" type="button" aria-pressed="true" aria-label="Tắt hiệu ứng tuyết">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M12 2v20M3.34 7l17.32 10M3.34 17L20.66 7M9.2 4.2L12 6.4l2.8-2.2M9.2 19.8l2.8-2.2 2.8 2.2"/>
-    <path class="i-off" d="M3 3l18 18" stroke-width="2.2"/>
-  </svg>
-</button>
-
 <main class="stage">
 
   <section class="id">
@@ -34,7 +27,7 @@
       <div class="avatar__in" id="avatar-in">
         <svg class="avatar__ring" id="ring" viewBox="0 0 200 200" aria-hidden="true"></svg>
         <img class="avatar__img" id="avatar-img" src="icon/avatar.png" alt="Ảnh đại diện của Mr Zerone" width="256" height="256">
-        <span class="avatar__fallback" aria-hidden="true">MZ</span>
+        <span class="avatar__fallback" aria-hidden="true"><span>Mr</span><span>Zerone</span></span>
       </div>
     </div>
 
@@ -110,8 +103,6 @@
   </ul>
 </main>
 
-<footer class="credit">profile vibecode by Claude</footer>
-
 <canvas id="snow-front" aria-hidden="true"></canvas>
 <p class="sr" id="live" aria-live="polite"></p>
 
@@ -119,12 +110,29 @@
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  // Cài đặt "giảm chuyển động" của hệ điều hành (Windows, macOS, Linux, Android, iOS)
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const ACCENT = '#FFD84D';
-  const MONO = 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace';
+  const MONO = 'ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace';
   const root = document.documentElement;
+  const bit = () => (Math.random() < .5 ? 0 : 1);
+  const rand01 = () => String(bit());
 
-  /* ---------- Ảnh đại diện: dùng chữ MZ nếu thiếu icon/avatar.png ---------- */
+  /* Theo dõi kích thước thật của một lớp canvas (đổi cỡ cửa sổ, xoay màn hình,
+     thanh địa chỉ co giãn trên điện thoại...) để lớp luôn phủ vừa khít. */
+  function watchSize(el, cb) {
+    let queued = false;
+    const run = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; cb(); });
+    };
+    if ('ResizeObserver' in window) new ResizeObserver(run).observe(el);
+    window.addEventListener('resize', run);
+    window.addEventListener('orientationchange', run);
+  }
+
+  /* ---------- Ảnh đại diện: hiện tên "Mr Zerone" nếu thiếu icon/avatar.png ---------- */
   const avatar = $('#avatar'), img = $('#avatar-img');
   const noImg = () => avatar.classList.add('no-img');
   img.addEventListener('error', noImg);
@@ -149,7 +157,7 @@
     t.setAttribute('x', '100');
     t.setAttribute('y', '12');
     t.setAttribute('transform', `rotate(${(i * 360 / N).toFixed(2)} 100 100)`);
-    t.textContent = Math.random() < .5 ? '0' : '1';
+    t.textContent = rand01();
     ring.appendChild(t);
     digits.push(t);
   }
@@ -167,7 +175,6 @@
   /* ---------- Tên "giải mã" từ số 0 / 1 thành chữ ---------- */
   const name = $('#name');
   const nameChars = [];
-  const rand01 = () => (Math.random() < .5 ? '0' : '1');
   const reveal = () => name.classList.add('is-ready');
   const failSafe = setTimeout(reveal, 2200);
 
@@ -256,15 +263,19 @@
   }
   decode();
 
-  /* ---------- Vệt vàng loang ra từ chỗ con trỏ ---------- */
+  /* ---------- Hiệu ứng khi rê chuột / focus vào từng mục ---------- */
   $$('.item__link').forEach(a => {
+    const li = a.closest('.item');
     const set = e => {
       const r = a.getBoundingClientRect();
       a.style.setProperty('--px', (e.clientX - r.left) + 'px');
       a.style.setProperty('--py', (e.clientY - r.top) + 'px');
     };
-    a.addEventListener('pointerenter', set);
-    a.addEventListener('pointerleave', set);
+    // Vệt vàng loang ra từ chỗ con trỏ; tuyết đọng trên mép tan đi
+    a.addEventListener('pointerenter', e => { set(e); li.classList.add('is-melt'); });
+    a.addEventListener('pointerleave', e => { set(e); li.classList.remove('is-melt'); });
+    a.addEventListener('focus', () => li.classList.add('is-melt'));
+    a.addEventListener('blur', () => li.classList.remove('is-melt'));
   });
 
   /* ---------- Nút sao chép ---------- */
@@ -301,15 +312,25 @@
   let tx = -9999, ty = -9999, sx = -9999, sy = -9999, hot = 0, inside = false;
   let raf = 0, last = 0;
 
-  function resize() {
+  function resizeField() {
+    const nw = cvs.clientWidth || window.innerWidth;
+    const nh = cvs.clientHeight || window.innerHeight;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    w = window.innerWidth; h = window.innerHeight;
-    cvs.width = Math.round(w * dpr);
-    cvs.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const bw = Math.max(1, Math.round(nw * dpr)), bh = Math.max(1, Math.round(nh * dpr));
+    if (nw === w && nh === h && bw === cvs.width && bh === cvs.height) return;
+    w = nw; h = nh;
+    cvs.width = bw; cvs.height = bh;
+    ctx.setTransform(bw / w, 0, 0, bh / h, 0, 0);
+
+    // Giữ nguyên các chữ số đã có khi đổi kích thước
+    const oc = cols, or = rows, old = cells;
     cols = Math.ceil(w / SIZE); rows = Math.ceil(h / SIZE);
     cells = new Uint8Array(cols * rows);
-    for (let i = 0; i < cells.length; i++) cells[i] = Math.random() < .5 ? 0 : 1;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        cells[r * cols + c] = (r < or && c < oc) ? old[r * oc + c] : bit();
+      }
+    }
     ctx.font = `500 ${Math.round(SIZE * .58)}px ${MONO}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -358,14 +379,10 @@
     draw(now / 1000, true);
   }
 
-  let resizeTimer = 0;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(resize, 150);
-  });
-  resize();
+  resizeField();
+  watchSize(cvs, resizeField);
 
-  /* ---------- Ảnh đại diện nghiêng 3D theo con trỏ ---------- */
+  /* ---------- Con trỏ: nền sáng theo chuột + ảnh đại diện nghiêng 3D ---------- */
   const avatarIn = $('#avatar-in');
   const levelAvatar = () => {
     avatarIn.style.setProperty('--ax', '0deg');
@@ -391,15 +408,19 @@
   }
 
   /* =========================================================
-     TUYẾT: 2 lớp (sau nội dung + trước nội dung), sao băng,
-     chữ số rơi, và nổ chữ số khi bấm chuột.
+     TUYẾT — luôn bật, phủ vừa khít toàn trang.
+     2 lớp (sau nội dung + trước nội dung), sao băng, chữ số rơi,
+     và nổ chữ số khi bấm chuột.
+     Nếu hệ điều hành bật "giảm chuyển động": tuyết vẫn rơi nhưng
+     thưa và chậm hơn, không có sao băng / hiệu ứng bấm.
      ========================================================= */
   const snowBack = $('#snow-back'), snowFront = $('#snow-front');
   const sb = snowBack.getContext('2d'), sf = snowFront.getContext('2d');
-  const toggle = $('#snow-toggle');
+  const SLOW = calm ? .45 : 1;      // tốc độ
+  const THIN = calm ? .4 : 1;       // mật độ
   let W = 0, H = 0;
   let flakes = [], fronts = [], meteors = [], bursts = [];
-  let snowRaf = 0, lastT = 0, wind = 0, nextMeteor = 3.5;
+  let lastT = 0, wind = 0, nextMeteor = 3.5;
 
   function sprite(size, paint) {
     const c = document.createElement('canvas');
@@ -446,12 +467,13 @@
       y: scatter ? Math.random() * H : -30 - Math.random() * 60,
       z, front, vx: 0,
       r: front ? 7 + Math.random() * 10 : .9 + z * 2.4,
-      vy: front ? 70 + Math.random() * 70 : 16 + z * 46,
-      sway: front ? 26 + Math.random() * 30 : 6 + z * 18,
+      vy: (front ? 70 + Math.random() * 70 : 16 + z * 46) * SLOW,
+      sway: (front ? 26 + Math.random() * 30 : 6 + z * 18) * SLOW,
       freq: .35 + Math.random() * .8,
       ph: Math.random() * Math.PI * 2,
       a: front ? .16 + Math.random() * .22 : .35 + z * .55,
-      kind: 'dot', rot: Math.random() * 6.28, spin: (Math.random() - .5) * 1.2, bit: ''
+      kind: 'dot', rot: Math.random() * 6.28,
+      spin: calm ? 0 : (Math.random() - .5) * 1.2, bit: ''
     };
     if (!front) {
       const k = Math.random();
@@ -462,19 +484,32 @@
   }
 
   function sizeSnow() {
+    // Lấy kích thước THẬT của lớp tuyết (không dùng số đoán) để phủ vừa khít
+    const nw = snowBack.clientWidth || window.innerWidth;
+    const nh = snowBack.clientHeight || window.innerHeight;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = window.innerWidth; H = window.innerHeight;
-    [snowBack, snowFront].forEach(c => {
-      c.width = Math.round(W * dpr);
-      c.height = Math.round(H * dpr);
+    const bw = Math.max(1, Math.round(nw * dpr)), bh = Math.max(1, Math.round(nh * dpr));
+    if (nw === W && nh === H && bw === snowBack.width && bh === snowBack.height) return;
+
+    const ow = W, oh = H;
+    W = nw; H = nh;
+    [snowBack, snowFront].forEach(c => { c.width = bw; c.height = bh; });
+    [sb, sf].forEach(g => {
+      g.setTransform(bw / W, 0, 0, bh / H, 0, 0);
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
     });
-    sb.setTransform(dpr, 0, 0, dpr, 0, 0);
-    sf.setTransform(dpr, 0, 0, dpr, 0, 0);
-    [sb, sf].forEach(g => { g.textAlign = 'center'; g.textBaseline = 'middle'; });
-    const nBack = Math.round(Math.min(170, Math.max(60, W * H / 9500)));
-    const nFront = W < 700 ? 8 : 14;
-    flakes = Array.from({ length: nBack }, () => makeFlake(false, true));
-    fronts = Array.from({ length: nFront }, () => makeFlake(true, true));
+
+    // Giữ vị trí hạt tuyết khi đổi kích thước để tuyết không bị giật / làm lại từ đầu
+    if (ow && oh) {
+      flakes.concat(fronts).forEach(f => { f.x *= W / ow; f.y *= H / oh; });
+    }
+    const nBack = Math.round(Math.min(170, Math.max(60, W * H / 9500)) * THIN);
+    const nFront = Math.round((W < 700 ? 8 : 14) * THIN);
+    while (flakes.length < nBack) flakes.push(makeFlake(false, true));
+    if (flakes.length > nBack) flakes.length = nBack;
+    while (fronts.length < nFront) fronts.push(makeFlake(true, true));
+    if (fronts.length > nFront) fronts.length = nFront;
   }
 
   function step(f, dt, t, g) {
@@ -538,11 +573,11 @@
   }
 
   function snowFrame(now) {
-    snowRaf = requestAnimationFrame(snowFrame);
+    requestAnimationFrame(snowFrame);
     const dt = Math.min(.05, (now - lastT) / 1000 || .016);
     lastT = now;
     const t = now / 1000;
-    wind = Math.sin(t * .12) * 12 + Math.sin(t * .31 + 1.7) * 6;
+    wind = (Math.sin(t * .12) * 12 + Math.sin(t * .31 + 1.7) * 6) * SLOW;
 
     sb.clearRect(0, 0, W, H);
     sf.clearRect(0, 0, W, H);
@@ -550,8 +585,10 @@
     for (const f of flakes) step(f, dt, t, sb);
 
     // Sao băng thỉnh thoảng vụt qua
-    nextMeteor -= dt;
-    if (nextMeteor <= 0) { spawnMeteor(); nextMeteor = 5 + Math.random() * 6; }
+    if (!calm) {
+      nextMeteor -= dt;
+      if (nextMeteor <= 0) { spawnMeteor(); nextMeteor = 5 + Math.random() * 6; }
+    }
     for (let i = meteors.length - 1; i >= 0; i--) {
       const m = meteors[i];
       m.life += dt; m.x += m.vx * dt; m.y += m.vy * dt;
@@ -598,38 +635,13 @@
     sf.globalAlpha = 1;
   }
 
-  function setSnow(on, save) {
-    toggle.setAttribute('aria-pressed', String(on));
-    toggle.setAttribute('aria-label', on ? 'Tắt hiệu ứng tuyết' : 'Bật hiệu ứng tuyết');
-    root.classList.toggle('snow-off', !on);
-    if (save) { try { localStorage.setItem('zerone-snow', on ? 'on' : 'off'); } catch (_) { /* bỏ qua */ } }
-    if (on) {
-      if (!snowRaf) { lastT = performance.now(); snowRaf = requestAnimationFrame(snowFrame); }
-    } else {
-      cancelAnimationFrame(snowRaf); snowRaf = 0;
-      sb.clearRect(0, 0, W, H); sf.clearRect(0, 0, W, H);
-      meteors = []; bursts = [];
-    }
-  }
+  sizeSnow();
+  watchSize(snowBack, sizeSnow);
+  lastT = performance.now();
+  requestAnimationFrame(snowFrame);
 
-  if (calm) {
-    root.classList.add('snow-off');
-  } else {
-    sizeSnow();
-    let resizeSnow = 0;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeSnow);
-      resizeSnow = setTimeout(sizeSnow, 150);
-    });
-
-    let want = true;
-    try { want = localStorage.getItem('zerone-snow') !== 'off'; } catch (_) { /* bỏ qua */ }
-    setSnow(want, false);
-
-    toggle.addEventListener('click', () => setSnow(toggle.getAttribute('aria-pressed') !== 'true', true));
-    window.addEventListener('pointerdown', e => {
-      if (snowRaf && e.target !== toggle) burst(e.clientX, e.clientY);
-    }, { passive: true });
+  if (!calm) {
+    window.addEventListener('pointerdown', e => burst(e.clientX, e.clientY), { passive: true });
   }
 })();
 </script>

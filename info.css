@@ -1,7 +1,8 @@
 /* =========================================================
    info.css — giao diện trang profile Mr Zerone
-   Chủ đề: nhị phân (zero + one). Nền xanh ultramarine, chữ trắng,
-   điểm nhấn vàng. Đổi màu ở khối :root bên dưới.
+   Chủ đề: nhị phân (zero + one) dưới trời tuyết.
+   Nền xanh ultramarine, chữ trắng, điểm nhấn vàng.
+   Đổi màu ở khối :root bên dưới.
    ========================================================= */
 
 :root {
@@ -28,6 +29,9 @@ html { background: var(--bg); -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--body);
@@ -53,7 +57,14 @@ h1, p, ul { margin: 0; }
   white-space: nowrap;
 }
 
-/* ---------- Nền chữ số 0 / 1 (vẽ bằng canvas) ---------- */
+@keyframes fade { to { opacity: 1; } }
+
+/* ---------- Các lớp nền (dưới → trên) ----------
+   0  lưới chữ số 0/1 + vignette
+   1  tuyết phía sau
+   2  nội dung
+   3  tuyết phía trước (bokeh mờ)
+   4  nút bật/tắt tuyết                               */
 #field {
   position: fixed;
   inset: 0;
@@ -63,12 +74,65 @@ h1, p, ul { margin: 0; }
   pointer-events: none;
 }
 
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 38%, transparent 52%, rgba(6, 8, 96, .52) 100%);
+}
+
+#snow-back,
+#snow-front {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#snow-back  { z-index: 1; }
+#snow-front { z-index: 3; }
+
+/* ---------- Nút bật / tắt tuyết ---------- */
+.snow-toggle {
+  position: fixed;
+  z-index: 4;
+  top: calc(env(safe-area-inset-top, 0px) + 1rem);
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--edge);
+  border-radius: 50%;
+  background: var(--bg-pill);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  color: var(--ink);
+  cursor: pointer;
+  opacity: 0;
+  animation: fade 1s 2.2s var(--ease) forwards;
+  transition: background .3s, color .3s, transform .6s var(--ease);
+}
+
+.snow-toggle:hover {
+  background: var(--ink);
+  color: var(--bg);
+  transform: rotate(60deg);
+}
+
+.snow-toggle .i-off { display: none; }
+.snow-toggle[aria-pressed="false"] .i-off { display: block; }
+.snow-toggle[aria-pressed="false"] { opacity: .75; }
+
 /* ---------- Bố cục ---------- */
 .stage {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  flex: 1 0 auto;
   width: min(1120px, calc(100% - 2.5rem));
-  min-height: 100svh;
   margin-inline: auto;
   padding-block: clamp(2.5rem, 8vw, 5rem);
   display: grid;
@@ -90,12 +154,36 @@ h1, p, ul { margin: 0; }
   width: clamp(116px, 18vw, 152px);
   aspect-ratio: 1;
   margin-bottom: clamp(1.75rem, 4vw, 2.5rem);
+  perspective: 700px;
   animation: pop .9s var(--ease) both;
 }
 
 @keyframes pop {
   from { opacity: 0; transform: scale(.8) rotate(-8deg); }
   to   { opacity: 1; transform: none; }
+}
+
+/* Quầng sáng "thở" phía sau ảnh */
+.avatar::before {
+  content: "";
+  position: absolute;
+  inset: -3%;
+  border-radius: 50%;
+  box-shadow: 0 0 36px 8px rgba(170, 180, 255, .5);
+  animation: breathe 4.5s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: .5; transform: scale(1); }
+  50%      { opacity: 1;  transform: scale(1.07); }
+}
+
+.avatar__in {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform: rotateX(var(--ay, 0deg)) rotateY(var(--ax, 0deg));
+  transition: transform .3s ease-out;
 }
 
 .avatar__ring {
@@ -164,10 +252,21 @@ h1, p, ul { margin: 0; }
 .name .ch {
   display: inline-block;
   text-align: center;
-  transition: color .9s ease;
+  cursor: default;
+  transition: color .7s ease, transform .5s var(--ease);
 }
 
 .name .ch.is-scr { color: var(--accent); }
+
+/* Sóng chạy qua tên mỗi vài giây */
+.name .ch.is-wave {
+  color: var(--accent);
+  transform: translateY(-.07em);
+  transition: color .15s ease, transform .25s var(--ease);
+}
+
+/* Rê chuột vào từng chữ */
+.name .ch.is-hover { transform: translateY(-.05em) scale(1.05); }
 
 /* Ẩn tên cho tới khi script chuẩn bị xong để không bị nháy */
 .js .name:not(.is-ready) { visibility: hidden; }
@@ -188,6 +287,7 @@ h1, p, ul { margin: 0; }
 }
 
 .item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: .6rem;
@@ -198,6 +298,57 @@ h1, p, ul { margin: 0; }
 }
 
 @keyframes slide { to { opacity: 1; transform: none; } }
+
+/* Tuyết đọng trên mép từng mục; tan đi khi rê chuột vào */
+.item::before,
+.item::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  bottom: calc(100% - 1.5px);
+  pointer-events: none;
+  border-radius: 999px 999px .25rem .25rem;
+  background: linear-gradient(#fff, #dfe3ff);
+  box-shadow: 0 -2px 8px rgba(255, 255, 255, .5);
+  transform-origin: 50% 100%;
+  animation: capIn .9s var(--ease) both;
+  animation-delay: calc(1.9s + var(--i, 0) * .12s);
+  transition: scale .55s var(--ease), opacity .55s;
+}
+
+.item::before {
+  left: calc(12% + var(--cx, 0%));
+  width: 2.6rem;
+  height: .62rem;
+}
+
+.item::after {
+  left: calc(12% + var(--cx, 0%) + 2.1rem);
+  width: 1.5rem;
+  height: .48rem;
+}
+
+@keyframes capIn {
+  from { transform: scale(0); }
+  to   { transform: none; }
+}
+
+.item:nth-child(1) { --cx: 4%; }
+.item:nth-child(2) { --cx: 30%; }
+.item:nth-child(3) { --cx: 12%; }
+.item:nth-child(4) { --cx: 36%; }
+.item:nth-child(5) { --cx: 20%; }
+
+.item:has(.item__link:hover)::before,
+.item:has(.item__link:hover)::after,
+.item:has(.item__link:focus-visible)::before,
+.item:has(.item__link:focus-visible)::after {
+  scale: 1 0;
+  opacity: 0;
+}
+
+.snow-off .item::before,
+.snow-off .item::after { display: none; }
 
 .item__link {
   position: relative;
@@ -349,6 +500,18 @@ h1, p, ul { margin: 0; }
   :root { --row: 3.6rem; }
 }
 
+/* ---------- Dòng cuối trang ---------- */
+.credit {
+  position: relative;
+  z-index: 2;
+  padding: 1rem 1rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  font-size: .85rem;
+  color: var(--ink-dim);
+  opacity: 0;
+  animation: fade 1s 2.6s var(--ease) forwards;
+}
+
 /* ---------- Giảm chuyển động ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -357,4 +520,5 @@ h1, p, ul { margin: 0; }
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
   }
+  .snow-toggle { display: none; }
 }

@@ -479,6 +479,126 @@ h1, p, ul { margin: 0; }
   :root { --row: 3.6rem; }
 }
 
+/* ---------- Nút Donate (góc trên phải) + box ở giữa màn hình ---------- */
+.donate-btn {
+  position: fixed;
+  z-index: 6;                       /* trên lớp nền mờ (4) và box (5) */
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  height: 3.25rem;
+  padding: 0 1.2rem 0 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  border: 1.5px solid var(--edge);
+  border-radius: 999px;
+  background: var(--bg-pill);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  color: var(--ink);
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .3s, color .3s, border-color .3s, transform .4s var(--ease);
+}
+.donate-btn svg { flex: none; color: var(--accent); transition: color .3s, transform .4s var(--ease); }
+.donate-btn:hover,
+.donate-btn[aria-expanded="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  transform: scale(1.05);
+}
+.donate-btn:hover svg,
+.donate-btn[aria-expanded="true"] svg { color: var(--accent-ink); transform: scale(1.15); }
+
+/* Lớp nền mờ: tự hiện khi nút ở trạng thái mở (không cần JS) */
+.donate-overlay {
+  display: none;
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  z-index: 4;
+  background: rgba(6, 8, 96, .55);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+.donate-btn[aria-expanded="true"] ~ .donate-overlay { display: block; }
+
+/* Box ở giữa màn hình */
+.donate-box {
+  position: fixed;
+  z-index: 5;
+  top: 0; right: 0; bottom: 0; left: 0;
+  margin: auto;                     /* canh giữa cả ngang lẫn dọc */
+  width: min(780px, calc(100vw - 2rem));   /* rộng hơn để QR nằm cạnh thông tin */
+  height: fit-content;
+  max-height: calc(100svh - 2rem);
+  overflow: auto;
+  padding: 1.25rem 1.5rem 1.5rem;
+  border: 1.5px solid var(--edge);
+  border-radius: 1.75rem;
+  background: rgba(20, 22, 170, .92);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 24px 64px rgba(6, 8, 96, .55);
+  animation: boxIn .35s var(--ease) both;
+}
+.donate-box:focus { outline: none; }
+.donate-box[hidden] { display: none; }
+@keyframes boxIn {
+  from { opacity: 0; transform: scale(.92) translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.donate-box__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.donate-box__title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+.donate-box__close {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--edge);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .3s, color .3s, transform .4s var(--ease);
+}
+.donate-box__close:hover { background: var(--ink); color: var(--bg); transform: rotate(90deg); }
+
+/* Vùng nội dung: code sau (QR, số tài khoản...). Trống thì hiện dòng chờ. */
+.donate-box__content { min-height: 8rem; text-align: center; color: var(--ink-dim); }
+.donate-box__content:empty { display: grid; place-items: center; }
+
+/* Ảnh QR: nền trắng để máy quét đọc được */
+.donate-box__content img {
+  display: block;
+  width: min(100%, 260px);
+  height: auto;
+  margin: 0 auto;
+  padding: .75rem;
+  border-radius: 1rem;
+  background: #fff;
+}
+
 /* ---------- Giảm chuyển động (cài đặt của hệ điều hành) ----------
    Tuyết vẫn rơi nhưng thưa và chậm hơn (xử lý trong script). */
 @media (prefers-reduced-motion: reduce) {
@@ -488,4 +608,163 @@ h1, p, ul { margin: 0; }
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
   }
+}
+
+/* =========================================================
+   Donate: thông tin bên trái, mã QR bên phải (không cần cuộn)
+   ========================================================= */
+#vietqr-widget {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  grid-template-areas: "main qr";
+  align-items: center;
+  gap: 1.5rem 2rem;
+  color: var(--ink);
+  font-family: var(--body);
+}
+
+.vqr-main { grid-area: main; display: grid; gap: .9rem; min-width: 0; }
+.vqr-qr   { grid-area: qr; display: grid; justify-items: center; gap: .75rem; text-align: center; }
+
+/* ----- Thông tin tài khoản ----- */
+.vqr-accounts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+.vqr-acc {
+  display: grid;
+  align-content: start;
+  gap: .1rem;
+  min-width: 0;
+  padding: .7rem .9rem;
+  border: 1.5px solid var(--edge);
+  border-radius: 1.1rem;
+  background: var(--bg-pill);
+  line-height: 1.3;
+}
+.vqr-acc__label { font-size: .8rem; color: var(--accent); font-weight: 600; }
+.vqr-acc__num   { font-size: 1.05rem; font-weight: 600; letter-spacing: .02em; overflow-wrap: anywhere; }
+.vqr-acc__name  { font-size: .8rem; color: var(--ink-dim); }
+
+/* ----- QR ----- */
+.vqr-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: .6rem;
+  display: grid;
+  place-items: center;
+  border-radius: 1.4rem;
+  background: #fff;              /* nền trắng để máy quét đọc được */
+  box-shadow: 0 0 0 3px var(--accent), 0 16px 36px rgba(6, 8, 96, .5);
+}
+.vqr-preview img { display: block; width: 100%; border-radius: .7rem; }
+.vqr-preview img[hidden] { display: none; }
+
+.vqr-error { font-size: .85rem; color: #FFC9C0; white-space: pre-wrap; }
+.vqr-error:empty { display: none; }
+
+/* ----- Chọn số tiền ----- */
+.vqr-controls { display: grid; gap: .6rem; }
+
+.vqr-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .5rem;
+}
+.vqr-options button {
+  min-height: 2.6rem;
+  padding: 0 .5rem;
+  border: 1.5px solid var(--edge);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: 600 .95rem/1 var(--body);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .25s, color .25s, border-color .25s, transform .35s var(--ease);
+}
+.vqr-options button:hover { border-color: var(--accent); transform: translateY(-1px); }
+.vqr-options button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.vqr-field {
+  display: flex;
+  align-items: center;
+  height: 3rem;
+  padding: 0 1.1rem;
+  border: 1.5px solid var(--edge);
+  border-radius: 999px;
+  background: var(--bg-pill);
+  transition: border-color .25s, box-shadow .25s;
+}
+.vqr-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 216, 77, .28);
+}
+.vqr-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 600 1rem var(--body);
+}
+.vqr-field input:focus,
+.vqr-field input:focus-visible { outline: none; }
+.vqr-field input::placeholder { color: rgba(255, 255, 255, .5); font-weight: 400; }
+.vqr-field__unit { flex: none; margin-left: .6rem; font-size: .85rem; color: var(--ink-dim); }
+
+/* ----- Mở ứng dụng / sao chép ----- */
+.vqr-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+.vqr-actions .chip {
+  min-height: 2.75rem;
+  padding: 0 .6rem;
+  border: 1.5px solid var(--edge);
+  border-radius: 999px;
+  background: var(--bg-pill);
+  color: var(--ink);
+  font: 600 .9rem/1.1 var(--body);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .25s, color .25s, border-color .25s, transform .35s var(--ease);
+}
+.vqr-actions .chip:hover { border-color: var(--accent); transform: translateY(-1px); }
+.vqr-actions .chip-open { background: #fff; border-color: #fff; color: var(--bg); }
+.vqr-actions .chip-open:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.vqr-actions .chip.is-done { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+.vqr-hint { margin: -.2rem 0 0; font-size: .82rem; color: var(--ink-dim); }
+.vqr-hint:empty { display: none; }
+
+/* Vùng code box trống thì ẩn, khỏi chừa khoảng trắng */
+.donate-box__content:empty { display: none; min-height: 0; }
+
+/* Điện thoại / màn hình hẹp: QR lên trên, thông tin bên dưới */
+@media (max-width: 680px) {
+  #vietqr-widget {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "qr" "main";
+  }
+  .vqr-qr { max-width: 220px; margin-inline: auto; }
+
+  /* Box nằm dưới nút Donate để không bị đè */
+  .donate-box {
+    top: calc(4.75rem + env(safe-area-inset-top, 0px));
+    max-height: calc(100svh - 5.75rem - env(safe-area-inset-top, 0px));
+  }
+}
+
+/* Màn hình thấp: thu nhỏ QR để vẫn gọn trong khung */
+@media (max-height: 640px) and (min-width: 681px) {
+  #vietqr-widget { grid-template-columns: minmax(0, 1fr) 200px; }
 }

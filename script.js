@@ -1,0 +1,558 @@
+/* info.js — hiệu ứng trang profile Mr Zerone (số 0/1, tuyết, sao chép, nút Donate) */
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  // Cài đặt "giảm chuyển động" của hệ điều hành (Windows, macOS, Linux, Android, iOS)
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ACCENT = '#FFD84D';
+  const MONO = 'ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace';
+  const root = document.documentElement;
+  const bit = () => (Math.random() < .5 ? 0 : 1);
+  const rand01 = () => String(bit());
+
+  /* Theo dõi kích thước thật của một lớp canvas (đổi cỡ cửa sổ, xoay màn hình,
+     thanh địa chỉ co giãn trên điện thoại...) để lớp luôn phủ vừa khít. */
+  function watchSize(el, cb) {
+    let queued = false;
+    const run = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; cb(); });
+    };
+    if ('ResizeObserver' in window) new ResizeObserver(run).observe(el);
+    window.addEventListener('resize', run);
+    window.addEventListener('orientationchange', run);
+  }
+
+  /* ---------- Ảnh đại diện: hiện tên "Mr Zerone" nếu thiếu icon/avatar.png ---------- */
+  const avatar = $('#avatar'), img = $('#avatar-img');
+  const noImg = () => avatar.classList.add('no-img');
+  img.addEventListener('error', noImg);
+  if (img.complete && img.naturalWidth === 0) noImg();
+
+  /* ---------- Icon thương hiệu: nếu không tải được thì dùng hình quả địa cầu ---------- */
+  const GLOBE = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2326E0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg>');
+  $$('.item__ico img').forEach(el => {
+    const swap = () => { if (el.src !== GLOBE) { el.onerror = null; el.src = GLOBE; } };
+    el.addEventListener('error', swap);
+    if (el.complete && el.naturalWidth === 0) swap();
+  });
+
+  /* ---------- Vòng chữ số 0 / 1 quay quanh ảnh ---------- */
+  const ring = $('#ring');
+  const NS = 'http://www.w3.org/2000/svg';
+  const N = 44;
+  const digits = [];
+  for (let i = 0; i < N; i++) {
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', '100');
+    t.setAttribute('y', '12');
+    t.setAttribute('transform', `rotate(${(i * 360 / N).toFixed(2)} 100 100)`);
+    t.textContent = rand01();
+    ring.appendChild(t);
+    digits.push(t);
+  }
+  if (!calm) {
+    setInterval(() => {
+      for (let k = 0; k < 3; k++) {
+        const d = digits[(Math.random() * N) | 0];
+        d.textContent = d.textContent === '0' ? '1' : '0';
+      }
+      digits.forEach(d => d.classList.remove('hot'));
+      digits[(Math.random() * N) | 0].classList.add('hot');
+    }, 700);
+  }
+
+  /* ---------- Tên "giải mã" từ số 0 / 1 thành chữ ---------- */
+  const name = $('#name');
+  const nameChars = [];
+  const reveal = () => name.classList.add('is-ready');
+  const failSafe = setTimeout(reveal, 2200);
+
+  function startNameFx() {
+    // Rê chuột vào từng chữ: chữ biến thành số rồi trở lại
+    nameChars.forEach(c => {
+      c.el.addEventListener('pointerenter', () => {
+        if (c.busy || !c.done) return;
+        c.busy = true;
+        c.el.classList.add('is-scr', 'is-hover');
+        let n = 0;
+        const iv = setInterval(() => {
+          if (++n > 6) {
+            clearInterval(iv);
+            c.el.textContent = c.final;
+            c.el.classList.remove('is-scr', 'is-hover');
+            c.busy = false;
+            return;
+          }
+          c.el.textContent = rand01();
+        }, 60);
+      });
+    });
+
+    // Cứ vài giây có một làn sóng sáng chạy qua tên
+    setTimeout(function wave() {
+      nameChars.forEach((c, i) => {
+        setTimeout(() => {
+          c.el.classList.add('is-wave');
+          setTimeout(() => c.el.classList.remove('is-wave'), 420);
+        }, i * 90);
+      });
+      setTimeout(wave, 7000);
+    }, 1500);
+  }
+
+  async function decode() {
+    if (calm) { reveal(); return; }
+    try {
+      await Promise.race([
+        document.fonts ? document.fonts.ready : Promise.resolve(),
+        new Promise(r => setTimeout(r, 1500))
+      ]);
+    } catch (_) { /* bỏ qua */ }
+
+    $$('.word', name).forEach(w => {
+      const text = w.textContent;
+      w.textContent = '';
+      Array.from(text).forEach(c => {
+        const s = document.createElement('span');
+        s.className = 'ch';
+        s.setAttribute('aria-hidden', 'true');
+        s.textContent = c;
+        w.appendChild(s);
+        nameChars.push({ el: s, final: c, done: false, busy: false });
+      });
+    });
+
+    // Khoá độ rộng từng chữ để dòng không bị xê dịch khi đổi số ↔ chữ
+    nameChars.forEach(c => { c.el.style.width = c.el.getBoundingClientRect().width + 'px'; });
+    nameChars.forEach(c => {
+      c.el.classList.add('is-scr');
+      c.el.textContent = rand01();
+    });
+    clearTimeout(failSafe);
+    reveal();
+
+    const start = performance.now();
+    const iv = setInterval(() => {
+      const t = performance.now() - start;
+      let left = 0;
+      nameChars.forEach((c, i) => {
+        if (t >= 650 + i * 120) {
+          if (!c.done) {
+            c.done = true;
+            c.el.textContent = c.final;
+            c.el.classList.remove('is-scr');
+          }
+        } else {
+          left++;
+          c.el.textContent = rand01();
+        }
+      });
+      if (!left) { clearInterval(iv); startNameFx(); }
+    }, 70);
+  }
+  decode();
+
+  /* ---------- Hiệu ứng khi rê chuột / focus vào từng mục ---------- */
+  $$('.item__link').forEach(a => {
+    const li = a.closest('.item');
+    const set = e => {
+      const r = a.getBoundingClientRect();
+      a.style.setProperty('--px', (e.clientX - r.left) + 'px');
+      a.style.setProperty('--py', (e.clientY - r.top) + 'px');
+    };
+    // Vệt vàng loang ra từ chỗ con trỏ; tuyết đọng trên mép tan đi
+    a.addEventListener('pointerenter', e => { set(e); li.classList.add('is-melt'); });
+    a.addEventListener('pointerleave', e => { set(e); li.classList.remove('is-melt'); });
+    a.addEventListener('focus', () => li.classList.add('is-melt'));
+    a.addEventListener('blur', () => li.classList.remove('is-melt'));
+  });
+
+  /* ---------- Nút sao chép ---------- */
+  const live = $('#live');
+  $$('.item__copy').forEach(btn => {
+    let timer = 0;
+    btn.addEventListener('click', async () => {
+      const value = btn.dataset.copy;
+      let ok = false;
+      try { await navigator.clipboard.writeText(value); ok = true; }
+      catch (_) {
+        try {
+          const t = document.createElement('textarea');
+          t.value = value; t.setAttribute('readonly', '');
+          t.style.position = 'fixed'; t.style.opacity = '0';
+          document.body.appendChild(t); t.select();
+          ok = document.execCommand('copy'); t.remove();
+        } catch (_) { /* bỏ qua */ }
+      }
+      live.textContent = ok ? 'Đã sao chép' : 'Chưa sao chép được';
+      if (ok) {
+        btn.classList.add('is-done');
+        clearTimeout(timer);
+        timer = setTimeout(() => btn.classList.remove('is-done'), 1600);
+      }
+    });
+  });
+
+  /* ---------- Nền chữ số 0 / 1 phản ứng theo con trỏ ---------- */
+  const cvs = $('#field');
+  const ctx = cvs.getContext('2d');
+  const SIZE = 24;
+  let w = 0, h = 0, cols = 0, rows = 0, cells = new Uint8Array(0);
+  let tx = -9999, ty = -9999, sx = -9999, sy = -9999, hot = 0, inside = false;
+  let raf = 0, last = 0;
+
+  function resizeField() {
+    const nw = cvs.clientWidth || window.innerWidth;
+    const nh = cvs.clientHeight || window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const bw = Math.max(1, Math.round(nw * dpr)), bh = Math.max(1, Math.round(nh * dpr));
+    if (nw === w && nh === h && bw === cvs.width && bh === cvs.height) return;
+    w = nw; h = nh;
+    cvs.width = bw; cvs.height = bh;
+    ctx.setTransform(bw / w, 0, 0, bh / h, 0, 0);
+
+    // Giữ nguyên các chữ số đã có khi đổi kích thước
+    const oc = cols, or = rows, old = cells;
+    cols = Math.ceil(w / SIZE); rows = Math.ceil(h / SIZE);
+    cells = new Uint8Array(cols * rows);
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        cells[r * cols + c] = (r < or && c < oc) ? old[r * oc + c] : bit();
+      }
+    }
+    ctx.font = `500 ${Math.round(SIZE * .58)}px ${MONO}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    draw(performance.now() / 1000, false);
+  }
+
+  function draw(t, animate) {
+    ctx.clearRect(0, 0, w, h);
+    if (animate) {
+      const flips = Math.ceil(cells.length * .004);
+      for (let k = 0; k < flips; k++) cells[(Math.random() * cells.length) | 0] ^= 1;
+    }
+    const R = Math.max(150, Math.min(w, h) * .22);
+    const R2 = R * R;
+    let warmNow = null;
+    for (let r = 0; r < rows; r++) {
+      const y = r * SIZE + SIZE / 2;
+      for (let c = 0; c < cols; c++) {
+        const x = c * SIZE + SIZE / 2;
+        let a = .07 + .045 * Math.sin(c * .22 + r * .14 + t * .9);
+        let warm = false;
+        if (hot > .01) {
+          const dx = x - sx, dy = y - sy, d2 = dx * dx + dy * dy;
+          if (d2 < R2) {
+            const f = 1 - Math.sqrt(d2) / R;
+            a += f * f * .6 * hot;
+            if (animate && f > .25 && Math.random() < f * .06 * hot) cells[r * cols + c] ^= 1;
+            warm = f > .45;
+          }
+        }
+        if (warm !== warmNow) { ctx.fillStyle = warm ? ACCENT : '#fff'; warmNow = warm; }
+        ctx.globalAlpha = a;
+        ctx.fillText(cells[r * cols + c] ? '1' : '0', x, y);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    if (now - last < 33) return;
+    last = now;
+    sx += (tx - sx) * .2;
+    sy += (ty - sy) * .2;
+    hot += ((inside ? 1 : 0) - hot) * .08;
+    draw(now / 1000, true);
+  }
+
+  resizeField();
+  watchSize(cvs, resizeField);
+
+  /* ---------- Con trỏ: nền sáng theo chuột + ảnh đại diện nghiêng 3D ---------- */
+  const avatarIn = $('#avatar-in');
+  const levelAvatar = () => {
+    avatarIn.style.setProperty('--ax', '0deg');
+    avatarIn.style.setProperty('--ay', '0deg');
+  };
+
+  if (!calm) {
+    window.addEventListener('pointermove', e => {
+      if (!inside) { sx = e.clientX; sy = e.clientY; }
+      tx = e.clientX; ty = e.clientY; inside = true;
+      if (e.pointerType !== 'touch') {
+        const nx = (e.clientX / window.innerWidth - .5) * 2;
+        const ny = (e.clientY / window.innerHeight - .5) * 2;
+        avatarIn.style.setProperty('--ax', (nx * 12).toFixed(1) + 'deg');
+        avatarIn.style.setProperty('--ay', (-ny * 10).toFixed(1) + 'deg');
+      }
+    }, { passive: true });
+    window.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') inside = false; });
+    window.addEventListener('pointercancel', () => { inside = false; });
+    root.addEventListener('pointerleave', () => { inside = false; levelAvatar(); });
+    window.addEventListener('blur', () => { inside = false; levelAvatar(); });
+    raf = requestAnimationFrame(frame);
+  }
+
+  /* =========================================================
+     TUYẾT — luôn bật, phủ vừa khít toàn trang.
+     2 lớp (sau nội dung + trước nội dung), sao băng, chữ số rơi,
+     và nổ chữ số khi bấm chuột.
+     Nếu hệ điều hành bật "giảm chuyển động": tuyết vẫn rơi nhưng
+     thưa và chậm hơn, không có sao băng / hiệu ứng bấm.
+     ========================================================= */
+  const snowBack = $('#snow-back'), snowFront = $('#snow-front');
+  const sb = snowBack.getContext('2d'), sf = snowFront.getContext('2d');
+  const SLOW = calm ? .45 : 1;      // tốc độ
+  const THIN = calm ? .4 : 1;       // mật độ
+  let W = 0, H = 0;
+  let flakes = [], fronts = [], meteors = [], bursts = [];
+  let lastT = 0, wind = 0, nextMeteor = .5;
+
+  function sprite(size, paint) {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    paint(c.getContext('2d'), size);
+    return c;
+  }
+
+  // Hạt tuyết mềm (dùng cho hạt nhỏ, bokeh lớn và đầu sao băng)
+  const DOT = sprite(48, (g, s) => {
+    const r = s / 2;
+    const gr = g.createRadialGradient(r, r, 0, r, r, r);
+    gr.addColorStop(0, 'rgba(255,255,255,1)');
+    gr.addColorStop(.35, 'rgba(255,255,255,.85)');
+    gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(r, r, r, 0, Math.PI * 2); g.fill();
+  });
+
+  // Bông tuyết 6 cánh
+  const STAR = sprite(64, (g, s) => {
+    g.translate(s / 2, s / 2);
+    g.strokeStyle = '#fff';
+    g.fillStyle = '#fff';
+    g.lineCap = 'round';
+    g.lineWidth = 2.4;
+    for (let i = 0; i < 6; i++) {
+      g.save();
+      g.rotate(i * Math.PI / 3);
+      g.beginPath();
+      g.moveTo(0, 0); g.lineTo(0, -26);
+      g.moveTo(0, -15); g.lineTo(-7, -22);
+      g.moveTo(0, -15); g.lineTo(7, -22);
+      g.stroke();
+      g.restore();
+    }
+    g.beginPath(); g.arc(0, 0, 3, 0, Math.PI * 2); g.fill();
+  });
+
+  function makeFlake(front, scatter) {
+    const z = Math.random();
+    const f = {
+      x: Math.random() * W,
+      y: scatter ? Math.random() * H : -30 - Math.random() * 60,
+      z, front, vx: 0,
+      r: front ? 7 + Math.random() * 10 : .9 + z * 2.4,
+      vy: (front ? 70 + Math.random() * 70 : 16 + z * 46) * SLOW,
+      sway: (front ? 26 + Math.random() * 30 : 6 + z * 18) * SLOW,
+      freq: .35 + Math.random() * .8,
+      ph: Math.random() * Math.PI * 2,
+      a: front ? .16 + Math.random() * .22 : .35 + z * .55,
+      kind: 'dot', rot: Math.random() * 6.28,
+      spin: calm ? 0 : (Math.random() - .5) * 1.2, bit: ''
+    };
+    if (!front) {
+      const k = Math.random();
+      if (k < .1) { f.kind = 'bit'; f.bit = rand01(); f.r = 5 + z * 3; f.a = .3 + z * .4; }
+      else if (k < .26 && f.r > 1.9) { f.kind = 'star'; }
+    }
+    return f;
+  }
+
+  function sizeSnow() {
+    // Lấy kích thước THẬT của lớp tuyết (không dùng số đoán) để phủ vừa khít
+    const nw = snowBack.clientWidth || window.innerWidth;
+    const nh = snowBack.clientHeight || window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const bw = Math.max(1, Math.round(nw * dpr)), bh = Math.max(1, Math.round(nh * dpr));
+    if (nw === W && nh === H && bw === snowBack.width && bh === snowBack.height) return;
+
+    const ow = W, oh = H;
+    W = nw; H = nh;
+    [snowBack, snowFront].forEach(c => { c.width = bw; c.height = bh; });
+    [sb, sf].forEach(g => {
+      g.setTransform(bw / W, 0, 0, bh / H, 0, 0);
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+    });
+
+    // Giữ vị trí hạt tuyết khi đổi kích thước để tuyết không bị giật / làm lại từ đầu
+    if (ow && oh) {
+      flakes.concat(fronts).forEach(f => { f.x *= W / ow; f.y *= H / oh; });
+    }
+    const nBack = Math.round(Math.min(170, Math.max(60, W * H / 9500)) * THIN);
+    const nFront = Math.round((W < 700 ? 8 : 14) * THIN);
+    while (flakes.length < nBack) flakes.push(makeFlake(false, true));
+    if (flakes.length > nBack) flakes.length = nBack;
+    while (fronts.length < nFront) fronts.push(makeFlake(true, true));
+    if (fronts.length > nFront) fronts.length = nFront;
+  }
+
+  function step(f, dt, t, g) {
+    // Con trỏ thổi tuyết ra xa
+    if (inside) {
+      const dx = f.x - tx, dy = f.y - ty, d2 = dx * dx + dy * dy;
+      const R = f.front ? 150 : 110;
+      if (d2 < R * R && d2 > 1) {
+        const d = Math.sqrt(d2);
+        const k = (1 - d / R) * (f.front ? 420 : 300);
+        f.vx += dx / d * k * dt;
+        f.y += dy / d * k * dt * .25;
+      }
+    }
+    f.vx *= Math.pow(.2, dt);
+    f.x += (f.vx + wind * (.4 + f.z)) * dt + Math.cos(t * f.freq + f.ph) * f.sway * dt;
+    f.y += f.vy * dt;
+    f.rot += f.spin * dt;
+    if (f.y > H + 40) { f.y = -30; f.x = Math.random() * W; }
+    if (f.x < -50) f.x = W + 40;
+    else if (f.x > W + 50) f.x = -40;
+
+    g.globalAlpha = f.a;
+    if (f.kind === 'star') {
+      const s = f.r * 4 + 6;
+      g.save();
+      g.translate(f.x, f.y);
+      g.rotate(f.rot);
+      g.drawImage(STAR, -s / 2, -s / 2, s, s);
+      g.restore();
+    } else if (f.kind === 'bit') {
+      g.font = `500 ${Math.round(f.r * 2)}px ${MONO}`;
+      g.fillStyle = ACCENT;
+      g.fillText(f.bit, f.x, f.y);
+    } else {
+      const s = f.r * 2.4;
+      g.drawImage(DOT, f.x - s / 2, f.y - s / 2, s, s);
+    }
+  }
+
+  function spawnMeteor() {
+    const ang = (24 + Math.random() * 16) * Math.PI / 180;
+    const sp = 700 + Math.random() * 350;
+    const dx = -Math.cos(ang), dy = Math.sin(ang);
+    meteors.push({
+      x: W * (.45 + Math.random() * .7), y: -20 + Math.random() * H * .3,
+      dx, dy, vx: dx * sp, vy: dy * sp,
+      len: 130 + Math.random() * 110, life: 0, max: .9 + Math.random() * .5
+    });
+  }
+
+  function burst(x, y) {
+    const parts = Array.from({ length: 14 }, () => {
+      const a = Math.random() * Math.PI * 2, s = 90 + Math.random() * 180;
+      return {
+        x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 40, ch: rand01(),
+        life: 0, max: .8 + Math.random() * .6, size: 12 + Math.random() * 6
+      };
+    });
+    bursts.push({ x, y, t: 0, parts });
+  }
+
+  function snowFrame(now) {
+    requestAnimationFrame(snowFrame);
+    const dt = Math.min(.05, (now - lastT) / 1000 || .016);
+    lastT = now;
+    const t = now / 1000;
+    wind = (Math.sin(t * .12) * 12 + Math.sin(t * .31 + 1.7) * 6) * SLOW;
+
+    sb.clearRect(0, 0, W, H);
+    sf.clearRect(0, 0, W, H);
+
+    for (const f of flakes) step(f, dt, t, sb);
+
+    // Sao băng thỉnh thoảng vụt qua
+    if (!calm) {
+      nextMeteor -= dt;
+      if (nextMeteor <= 0) { spawnMeteor(); nextMeteor = .3 + Math.random() * 3; }
+    }
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      const m = meteors[i];
+      m.life += dt; m.x += m.vx * dt; m.y += m.vy * dt;
+      const p = m.life / m.max;
+      if (p >= 1 || m.x < -300 || m.y > H + 300) { meteors.splice(i, 1); continue; }
+      const a = Math.sin(Math.PI * p);
+      const tailX = m.x - m.dx * m.len, tailY = m.y - m.dy * m.len;
+      const gr = sb.createLinearGradient(m.x, m.y, tailX, tailY);
+      gr.addColorStop(0, `rgba(255,255,255,${(.95 * a).toFixed(3)})`);
+      gr.addColorStop(1, 'rgba(255,255,255,0)');
+      sb.globalAlpha = 1;
+      sb.strokeStyle = gr; sb.lineWidth = 2; sb.lineCap = 'round';
+      sb.beginPath(); sb.moveTo(m.x, m.y); sb.lineTo(tailX, tailY); sb.stroke();
+      sb.globalAlpha = a;
+      sb.drawImage(DOT, m.x - 9, m.y - 9, 18, 18);
+    }
+    sb.globalAlpha = 1;
+
+    for (const f of fronts) step(f, dt, t, sf);
+
+    // Nổ chữ số khi bấm
+    for (let i = bursts.length - 1; i >= 0; i--) {
+      const b = bursts[i];
+      b.t += dt;
+      if (b.t > 1.6) { bursts.splice(i, 1); continue; }
+      if (b.t < .6) {
+        const p = b.t / .6;
+        sf.globalAlpha = (1 - p) * .7;
+        sf.strokeStyle = '#fff'; sf.lineWidth = 2;
+        sf.beginPath(); sf.arc(b.x, b.y, 8 + p * 58, 0, Math.PI * 2); sf.stroke();
+      }
+      sf.fillStyle = ACCENT;
+      for (const q of b.parts) {
+        q.life += dt;
+        if (q.life >= q.max) continue;
+        q.vy += 160 * dt;
+        q.vx *= Math.pow(.35, dt); q.vy *= Math.pow(.6, dt);
+        q.x += q.vx * dt; q.y += q.vy * dt;
+        sf.globalAlpha = 1 - q.life / q.max;
+        sf.font = `600 ${Math.round(q.size)}px ${MONO}`;
+        sf.fillText(q.ch, q.x, q.y);
+      }
+    }
+    sf.globalAlpha = 1;
+  }
+
+  sizeSnow();
+  watchSize(snowBack, sizeSnow);
+  lastT = performance.now();
+  requestAnimationFrame(snowFrame);
+
+  if (!calm) {
+    window.addEventListener('pointerdown', e => burst(e.clientX, e.clientY), { passive: true });
+  }
+
+    /* ---------- Nút Donate (góc trên phải): bấm để mở / đóng box ---------- */
+  const donateBtn = $('#donate-btn'), donateBox = $('#donate-box');
+  const setDonate = open => {
+    donateBox.hidden = !open;
+    donateBtn.setAttribute('aria-expanded', String(open));
+    if (open) donateBox.focus();
+  };
+  donateBtn.addEventListener('click', e => { e.stopPropagation(); setDonate(donateBox.hidden); });
+  // Nút X trong box
+  $$('[data-close]', donateBox).forEach(b =>
+    b.addEventListener('click', () => { setDonate(false); donateBtn.focus(); }));
+  // Bấm ra ngoài (lớp nền mờ) hoặc nhấn Esc thì đóng
+  document.addEventListener('pointerdown', e => {
+    if (!donateBox.hidden && !donateBox.contains(e.target) && !donateBtn.contains(e.target)) setDonate(false);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !donateBox.hidden) { setDonate(false); donateBtn.focus(); }
+  });
+
+})();
